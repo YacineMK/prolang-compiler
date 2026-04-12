@@ -1,1 +1,1 @@
-# golang-compiler
+# zig-compiler
