@@ -26,6 +26,7 @@ const (
 	WHILE        TokenKind = "WHILE"
 	ENDLOOP      TokenKind = "ENDLOOP"
 	FOR          TokenKind = "FOR"
+	IN           TokenKind = "IN"
 	TO           TokenKind = "TO"
 	ENDFOR       TokenKind = "ENDFOR"
 	AND          TokenKind = "AND"
@@ -63,8 +64,8 @@ const (
 	IN_FUNC  TokenKind = "IN_FUNC"
 	OUT_FUNC TokenKind = "OUT_FUNC"
 
-	EOF      TokenKind = "EOF"
-	ILLEGAL  TokenKind = "ILLEGAL"
+	EOF     TokenKind = "EOF"
+	ILLEGAL TokenKind = "ILLEGAL"
 )
 
 type Token struct {
@@ -77,23 +78,23 @@ type Token struct {
 var Keywords = map[string]TokenKind{
 	"BeginProject": BEGINPROJECT,
 	"EndProject":   ENDPROJECT,
-	"Setup":         SETUP,
-	"Run":           RUN,
-	"define":        DEFINE,
-	"const":         CONST,
-	"integer":       INTEGER,
-	"float":         FLOAT,
-	"if":            IF,
-	"then":          THEN,
-	"else":          ELSE,
-	"endIf":         ENDIF,
-	"loop":          LOOP,
-	"while":         WHILE,
-	"endloop":       ENDLOOP,
-	"for":           FOR,
-	"to":            TO,
-	"endfor":        ENDFOR,
-	"AND":           AND,
-	"OR":            OR,
-	"NON":           NON,
+	"Setup":        SETUP,
+	"Run":          RUN,
+	"define":       DEFINE,
+	"const":        CONST,
+	"integer":      INTEGER,
+	"float":        FLOAT,
+	"if":           IF,
+	"then":         THEN,
+	"else":         ELSE,
+	"endIf":        ENDIF,
+	"loop":         LOOP,
+	"while":        WHILE,
+	"endloop":      ENDLOOP,
+	"for":          FOR,
+	"to":           TO,
+	"endfor":       ENDFOR,
+	"AND":          AND,
+	"OR":           OR,
+	"NON":          NON,
 }

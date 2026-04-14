@@ -253,7 +253,16 @@ func (l *Lexer) scanIdent() {
 
 	// context keywords
 	if word == "in" {
-		l.addToken(IN_FUNC, word)
+		// Look ahead to see if next non-space char is '('
+		p := l.pos
+		for p < len(l.source) && unicode.IsSpace(l.source[p]) {
+			p++
+		}
+		if p < len(l.source) && l.source[p] == '(' {
+			l.addToken(IN_FUNC, word)
+		} else {
+			l.addToken(IN, word)
+		}
 		return
 	}
 	if word == "out" {
