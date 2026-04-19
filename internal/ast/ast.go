@@ -1,11 +1,5 @@
 package ast
 
-// ════════════════════════════════════════════════════════════════
-//  AST — Abstract Syntax Tree Nodes
-// ════════════════════════════════════════════════════════════════
-
-// ─── Program ────────────────────────────────────────────────────
-
 type Program struct {
 	Name  string
 	Setup *Setup
@@ -19,8 +13,6 @@ type Setup struct {
 type Run struct {
 	Instructions []Instruction
 }
-
-// ─── Déclarations ───────────────────────────────────────────────
 
 type Declaration interface {
 	declarationNode()
@@ -47,8 +39,6 @@ type ConstDeclaration struct {
 }
 
 func (*ConstDeclaration) declarationNode() {}
-
-// ─── Instructions ───────────────────────────────────────────────
 
 type Instruction interface {
 	instructionNode()
@@ -111,8 +101,6 @@ type OutFunction struct {
 
 func (*OutFunction) instructionNode() {}
 
-// ─── Expressions ────────────────────────────────────────────────
-
 type Expression interface {
 	expressionNode()
 	getType() DataType
@@ -140,7 +128,6 @@ type Identifier struct {
 
 func (*Identifier) expressionNode() {}
 func (id *Identifier) getType() DataType {
-	// This would need symbol table lookup in practice
 	return TYPE_UNKNOWN
 }
 
@@ -152,7 +139,6 @@ type BinaryOp struct {
 
 func (*BinaryOp) expressionNode() {}
 func (bo *BinaryOp) getType() DataType {
-	// Type inference based on operands
 	leftType := bo.Left.getType()
 	rightType := bo.Right.getType()
 	return MergeTypes(leftType, rightType)
@@ -168,15 +154,13 @@ func (uo *UnaryOp) getType() DataType {
 	return uo.Operand.getType()
 }
 
-// ─── Conditions ─────────────────────────────────────────────────
-
 type Condition interface {
 	conditionNode()
 }
 
 type ComparisonCondition struct {
 	Left     Expression
-	Operator string // <, >, <=, >=, ==, !=
+	Operator string
 	Right    Expression
 }
 
@@ -184,7 +168,7 @@ func (*ComparisonCondition) conditionNode() {}
 
 type LogicalCondition struct {
 	Left     Condition
-	Operator string // AND, OR
+	Operator string
 	Right    Condition
 }
 

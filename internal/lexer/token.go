@@ -3,13 +3,11 @@ package lexer
 type TokenKind string
 
 const (
-	// literals
 	INT_CONST   TokenKind = "INT_CONST"
 	FLOAT_CONST TokenKind = "FLOAT_CONST"
 	STRING      TokenKind = "STRING"
 	IDENT       TokenKind = "IDENT"
 
-	// keywords
 	BEGINPROJECT TokenKind = "BEGINPROJECT"
 	ENDPROJECT   TokenKind = "ENDPROJECT"
 	SETUP        TokenKind = "SETUP"
@@ -33,7 +31,6 @@ const (
 	OR           TokenKind = "OR"
 	NON          TokenKind = "NON"
 
-	// operators
 	ASSIGN TokenKind = "ASSIGN"
 	PLUS   TokenKind = "PLUS"
 	MINUS  TokenKind = "MINUS"

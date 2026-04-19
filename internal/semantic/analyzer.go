@@ -7,10 +7,6 @@ import (
 	"strconv"
 )
 
-// ════════════════════════════════════════════════════════════════
-//  ANALYSEUR SÉMANTIQUE (SEMANTIC ANALYZER)
-// ════════════════════════════════════════════════════════════════
-
 type Analyzer struct {
 	tokens []lexer.Token
 	pos    int
@@ -18,12 +14,9 @@ type Analyzer struct {
 	Errors []string
 }
 
-// NewAnalyzer crée un nouvel analyseur sémantique
 func NewAnalyzer(tokens []lexer.Token, table *ast.SymbolTable) *Analyzer {
 	return &Analyzer{tokens: tokens, Table: table}
 }
-
-// ─── Navigation dans les tokens ──────────────────────────────────
 
 func (a *Analyzer) cur() lexer.Token {
 	if a.pos >= len(a.tokens) {
@@ -47,17 +40,12 @@ func (a *Analyzer) expect(kind lexer.TokenKind) (lexer.Token, bool) {
 	return a.consume(), true
 }
 
-// ─── Gestion des erreurs ────────────────────────────────────────
-
 func (a *Analyzer) errorf(t lexer.Token, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	a.Errors = append(a.Errors, fmt.Sprintf("SEMANTIC_ERROR, ligne %d, colonne %d, %s [entité: '%s']",
 		t.Line, t.Col, msg, t.Value))
 }
 
-// ─── Analyse principale ──────────────────────────────────────────
-
-// Analyze effectue l'analyse sémantique complète du programme
 func (a *Analyzer) Analyze() {
 	a.expect(lexer.BEGINPROJECT)
 	a.expect(lexer.IDENT) // nom du programme
@@ -77,8 +65,6 @@ func (a *Analyzer) Analyze() {
 	a.expect(lexer.SEMI)
 }
 
-// ─── Déclarations ───────────────────────────────────────────────
-
 func (a *Analyzer) parseDeclarations() {
 	for {
 		switch a.cur().Kind {
@@ -93,9 +79,8 @@ func (a *Analyzer) parseDeclarations() {
 }
 
 func (a *Analyzer) parseDefine() {
-	a.consume() // define
+	a.consume()
 
-	// Noms : a | b | c
 	var names []lexer.Token
 	if tok, ok := a.expect(lexer.IDENT); ok {
 		names = append(names, tok)
@@ -111,7 +96,6 @@ func (a *Analyzer) parseDefine() {
 
 	a.expect(lexer.COLON)
 
-	// Tableau : [type ; taille]
 	if a.cur().Kind == lexer.LBRACK {
 		a.consume()
 		typeTok, ok := a.parseType()
@@ -147,7 +131,6 @@ func (a *Analyzer) parseDefine() {
 		return
 	}
 
-	// Variable simple : define a : integer [= val] ;
 	typeTok, ok := a.parseType()
 	if !ok {
 		return
@@ -181,7 +164,7 @@ func (a *Analyzer) parseDefine() {
 }
 
 func (a *Analyzer) parseConst() {
-	a.consume() // const
+	a.consume()
 	nameTok, ok := a.expect(lexer.IDENT)
 	if !ok {
 		return
@@ -211,8 +194,6 @@ func (a *Analyzer) parseConst() {
 		a.errorf(nameTok, err.Error())
 	}
 }
-
-// ─── Instructions ────────────────────────────────────────────────
 
 func (a *Analyzer) parseInstructions() {
 	for {
@@ -246,7 +227,6 @@ func (a *Analyzer) parseAssignment() {
 		a.errorf(nameTok, "'%s' est une constante, affectation interdite", nameTok.Value)
 	}
 
-	// Accès tableau ?
 	if a.cur().Kind == lexer.LBRACK {
 		a.consume()
 		a.parseExpr()
@@ -271,7 +251,7 @@ func (a *Analyzer) parseAssignment() {
 }
 
 func (a *Analyzer) parseIf() {
-	a.consume() // if
+	a.consume()
 	a.expect(lexer.LPAREN)
 	a.parseCondition()
 	a.expect(lexer.RPAREN)
@@ -291,7 +271,7 @@ func (a *Analyzer) parseIf() {
 }
 
 func (a *Analyzer) parseLoopWhile() {
-	a.consume() // loop
+	a.consume()
 	a.expect(lexer.WHILE)
 	a.expect(lexer.LPAREN)
 	a.parseCondition()
@@ -304,7 +284,7 @@ func (a *Analyzer) parseLoopWhile() {
 }
 
 func (a *Analyzer) parseFor() {
-	a.consume() // for
+	a.consume()
 	idfTok, ok := a.expect(lexer.IDENT)
 	if !ok {
 		return
@@ -316,9 +296,9 @@ func (a *Analyzer) parseFor() {
 		a.errorf(idfTok, "variable de boucle '%s' doit être de type integer", idfTok.Value)
 	}
 	a.expect(lexer.IN)
-	a.parseExpr() // val_init
+	a.parseExpr()
 	a.expect(lexer.TO)
-	a.parseExpr() // val_limit
+	a.parseExpr()
 	a.expect(lexer.LBRACE)
 	a.parseInstructions()
 	a.expect(lexer.RBRACE)
@@ -327,13 +307,12 @@ func (a *Analyzer) parseFor() {
 }
 
 func (a *Analyzer) parseInFunc() {
-	a.consume() // in
+	a.consume()
 	a.expect(lexer.LPAREN)
 	nameTok, ok := a.expect(lexer.IDENT)
 	if ok && a.Table.Lookup(nameTok.Value) == nil {
 		a.errorf(nameTok, "identificateur '%s' non déclaré", nameTok.Value)
 	}
-	// Handle array indexing: in(array[index])
 	if a.cur().Kind == lexer.LBRACK {
 		a.consume()
 		a.parseExpr()
@@ -344,7 +323,7 @@ func (a *Analyzer) parseInFunc() {
 }
 
 func (a *Analyzer) parseOutFunc() {
-	a.consume() // out
+	a.consume()
 	a.expect(lexer.LPAREN)
 	for {
 		t := a.cur()
@@ -355,7 +334,6 @@ func (a *Analyzer) parseOutFunc() {
 			if a.Table.Lookup(nameTok.Value) == nil {
 				a.errorf(nameTok, "identificateur '%s' non déclaré", nameTok.Value)
 			}
-			// Handle array indexing: out(..., array[index], ...)
 			if a.cur().Kind == lexer.LBRACK {
 				a.consume()
 				a.parseExpr()
@@ -372,8 +350,6 @@ func (a *Analyzer) parseOutFunc() {
 	a.expect(lexer.RPAREN)
 	a.expect(lexer.SEMI)
 }
-
-// ─── Expressions ─────────────────────────────────────────────────
 
 func (a *Analyzer) parseExpr() ast.DataType {
 	return a.parseAddSub()
@@ -423,12 +399,10 @@ func (a *Analyzer) parsePrimary() ast.DataType {
 		return sym.Type
 	case lexer.LPAREN:
 		a.consume()
-		// Constante signée : (+5) ou (-3.14)
 		if a.cur().Kind == lexer.PLUS || a.cur().Kind == lexer.MINUS {
 			a.consume()
 		}
 		inner := a.parseExpr()
-		// Check for comparison operators inside parentheses
 		if a.cur().Kind == lexer.LT || a.cur().Kind == lexer.GT ||
 			a.cur().Kind == lexer.LTE || a.cur().Kind == lexer.GTE ||
 			a.cur().Kind == lexer.EQ || a.cur().Kind == lexer.NEQ {
@@ -475,7 +449,6 @@ func (a *Analyzer) parseNotCondition() {
 }
 
 func (a *Analyzer) parsePrimaryCondition() {
-	// Handle parenthesized conditions: (condition)
 	if a.cur().Kind == lexer.LPAREN {
 		a.consume()
 		a.parseCondition()
@@ -483,7 +456,6 @@ func (a *Analyzer) parsePrimaryCondition() {
 		return
 	}
 
-	// Handle comparison: expr <op> expr
 	a.parseExpr()
 	switch a.cur().Kind {
 	case lexer.LT, lexer.GT, lexer.LTE, lexer.GTE, lexer.EQ, lexer.NEQ:
@@ -491,8 +463,6 @@ func (a *Analyzer) parsePrimaryCondition() {
 		a.parseExpr()
 	}
 }
-
-// ─── Utilitaires ─────────────────────────────────────────────────
 
 func (a *Analyzer) parseType() (lexer.Token, bool) {
 	t := a.cur()
@@ -505,7 +475,6 @@ func (a *Analyzer) parseType() (lexer.Token, bool) {
 
 func (a *Analyzer) parseLiteral(expected ast.DataType) (string, bool) {
 	t := a.cur()
-	// Constante signée entre parenthèses : (+5) ou (-3.14)
 	if t.Kind == lexer.LPAREN {
 		a.consume()
 		sign := ""

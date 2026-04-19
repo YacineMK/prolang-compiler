@@ -77,10 +77,6 @@ func fmtFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', -1, 64)
 }
 
-//
-// PASS 1 — Constant + Copy Propagation (Global-ish)
-//
-
 func propagate(quads []quad.Quad) []quad.Quad {
 	env := map[string]string{}
 
@@ -100,7 +96,6 @@ func propagate(quads []quad.Quad) []quad.Quad {
 		a1 := resolve(q.Arg1)
 		a2 := resolve(q.Arg2)
 
-		// Track constants
 		if q.Op == ":=" && isLiteral(a1) {
 			env[q.Result] = a1
 		} else if q.Op == ":=" && isTemp(a1) {
@@ -115,23 +110,17 @@ func propagate(quads []quad.Quad) []quad.Quad {
 	return out
 }
 
-//
-// PASS 2 — Constant Folding
-//
-
 func fold(quads []quad.Quad) []quad.Quad {
 	out := []quad.Quad{}
 
 	for _, q := range quads {
 
-		// NEG
 		if q.Op == "NEG" && isLiteral(q.Arg1) {
 			f, _ := strconv.ParseFloat(q.Arg1, 64)
 			out = append(out, quad.Quad{Op: ":=", Arg1: fmtFloat(-f), Arg2: "", Result: q.Result})
 			continue
 		}
 
-		// Binary
 		if isLiteral(q.Arg1) && isLiteral(q.Arg2) {
 			if val, ok := eval(q.Op, q.Arg1, q.Arg2); ok {
 				out = append(out, quad.Quad{Op: ":=", Arg1: val, Arg2: "", Result: q.Result})
@@ -144,10 +133,6 @@ func fold(quads []quad.Quad) []quad.Quad {
 
 	return out
 }
-
-//
-// PASS 3 — Algebraic Simplification
-//
 
 func simplify(quads []quad.Quad) []quad.Quad {
 	out := []quad.Quad{}
@@ -203,10 +188,6 @@ func simplify(quads []quad.Quad) []quad.Quad {
 	return out
 }
 
-//
-// PASS 4 — Common Subexpression Elimination (CSE)
-//
-
 func cse(quads []quad.Quad) []quad.Quad {
 	exprMap := map[string]string{}
 	out := []quad.Quad{}
@@ -221,7 +202,6 @@ func cse(quads []quad.Quad) []quad.Quad {
 			k := key(q.Op, q.Arg1, q.Arg2)
 
 			if existing, ok := exprMap[k]; ok {
-				// reuse previous computation
 				out = append(out, quad.Quad{Op: ":=", Arg1: existing, Arg2: "", Result: q.Result})
 				continue
 			}
@@ -234,10 +214,6 @@ func cse(quads []quad.Quad) []quad.Quad {
 
 	return out
 }
-
-//
-// PASS 5 — Dead Code Elimination
-//
 
 func deadCode(quads []quad.Quad) []quad.Quad {
 	uses := map[string]int{}
@@ -262,10 +238,6 @@ func deadCode(quads []quad.Quad) []quad.Quad {
 
 	return out
 }
-
-//
-// FINAL PIPELINE (like real compiler passes)
-//
 
 func Optimize(quads []quad.Quad) []quad.Quad {
 	q := propagate(quads)

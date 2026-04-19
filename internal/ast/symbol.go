@@ -2,14 +2,9 @@ package ast
 
 import (
 	"fmt"
+	"hash/fnv"
 	"strings"
 )
-
-// ════════════════════════════════════════════════════════════════
-//  SYMBOL TABLE — Table de hachage pour stockage des symboles
-// ════════════════════════════════════════════════════════════════
-
-// ─── Énumérations ───────────────────────────────────────────────
 
 type SymbolKind string
 
@@ -27,8 +22,6 @@ const (
 	TYPE_UNKNOWN DataType = "unknown"
 )
 
-// ─── Symbol ─────────────────────────────────────────────────────
-
 type Symbol struct {
 	Name        string
 	Kind        SymbolKind
@@ -40,9 +33,7 @@ type Symbol struct {
 	Initialized bool
 }
 
-// ─── SymbolTable (Hash Table with Chaining) ─────────────────────
-
-const TABLE_SIZE = 256
+const TABLE_SIZE = 1024
 
 type entry struct {
 	key  string
@@ -55,22 +46,16 @@ type SymbolTable struct {
 	count   int
 }
 
-// NewSymbolTable crée une nouvelle table de symboles
 func NewSymbolTable() *SymbolTable {
 	return &SymbolTable{}
 }
 
-// hashStr calcule le hash d'une chaîne
 func hashStr(key string) int {
-	h := 0
-	for _, c := range key {
-		h = (h*31 + int(c)) % TABLE_SIZE
-	}
-	return h
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return int(h.Sum32()) % TABLE_SIZE
 }
 
-// Insert ajoute un symbole à la table
-// Retourne une erreur si l'identificateur est déjà déclaré
 func (st *SymbolTable) Insert(sym Symbol) error {
 	if st.Lookup(sym.Name) != nil {
 		return fmt.Errorf("identificateur '%s' déjà déclaré", sym.Name)
@@ -82,8 +67,6 @@ func (st *SymbolTable) Insert(sym Symbol) error {
 	return nil
 }
 
-// Lookup recherche un symbole par nom
-// Retourne nil si non trouvé
 func (st *SymbolTable) Lookup(name string) *Symbol {
 	idx := hashStr(name)
 	for e := st.buckets[idx]; e != nil; e = e.next {
@@ -94,7 +77,6 @@ func (st *SymbolTable) Lookup(name string) *Symbol {
 	return nil
 }
 
-// MarkInitialized marque un symbole comme initialisé
 func (st *SymbolTable) MarkInitialized(name string) {
 	idx := hashStr(name)
 	for e := st.buckets[idx]; e != nil; e = e.next {
@@ -105,7 +87,6 @@ func (st *SymbolTable) MarkInitialized(name string) {
 	}
 }
 
-// Update met à jour la valeur d'un symbole
 func (st *SymbolTable) Update(name, value string) error {
 	idx := hashStr(name)
 	for e := st.buckets[idx]; e != nil; e = e.next {
@@ -117,7 +98,6 @@ func (st *SymbolTable) Update(name, value string) error {
 	return fmt.Errorf("symbole '%s' non trouvé", name)
 }
 
-// Print affiche la table de symboles au format tabulaire
 func (st *SymbolTable) Print() {
 	line := strings.Repeat("─", 72)
 	fmt.Println("\n┌" + line + "┐")
@@ -142,17 +122,11 @@ func (st *SymbolTable) Print() {
 	fmt.Printf("  Total : %d symboles\n\n", st.count)
 }
 
-// center centre une chaîne dans une largeur donnée
 func center(s string, w int) string {
 	pad := (w - len(s)) / 2
 	return strings.Repeat(" ", pad) + s + strings.Repeat(" ", w-len(s)-pad)
 }
 
-// ════════════════════════════════════════════════════════════════
-//  TYPE UTILITIES
-// ════════════════════════════════════════════════════════════════
-
-// MergeTypes détermine le type résultant de l'opération sur deux types
 func MergeTypes(a, b DataType) DataType {
 	if a == TYPE_FLOAT || b == TYPE_FLOAT {
 		return TYPE_FLOAT

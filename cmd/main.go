@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	// Get file path from command-line arguments
 	if len(os.Args) < 2 {
 		utils.PrintError("Usage: go_compiler <file_path>")
 		utils.PrintError("Example: go_compiler example/test.pl")
@@ -22,7 +21,6 @@ func main() {
 	filePath := os.Args[1]
 	utils.PrintInfo("Input file: %s", filePath)
 
-	// Read the file
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		utils.PrintError("Error reading file %s: %v", filePath, err)
@@ -31,7 +29,6 @@ func main() {
 
 	src := string(data)
 
-	// ── Analyse Lexicale ─────────────────────────────────────
 	utils.PrintSection("ANALYSE LEXICALE — ProLang")
 	utils.PrintPhase("Lexical Analysis")
 
@@ -53,7 +50,6 @@ func main() {
 		utils.PrintSuccess("Lexical Analysis successful")
 	}
 
-	// ── Analyse Sémantique ───────────────────────────────────
 	utils.PrintSection("ANALYSE SÉMANTIQUE — ProLang")
 	utils.PrintPhase("Semantic Analysis")
 
@@ -74,11 +70,9 @@ func main() {
 		utils.PrintSuccess("Semantic Analysis successful")
 	}
 
-	// ── Génération de Quads ──────────────────────────────────
 	utils.PrintSection("GÉNÉRATION DES QUADS — ProLang")
 	utils.PrintPhase("Quad Generation")
 
-	// Create quad generator from semantic analyzer
 	qg := semantic.NewQuadGenerator(analyzer)
 	qm := qg.Generate()
 
@@ -87,7 +81,6 @@ func main() {
 	quad.Print("── QUADS GÉNÉRÉS ──", qm.Quads)
 	utils.PrintStats("Total quads generated: %d", len(qm.Quads))
 
-	// ── Optimisation ─────────────────────────────────────────
 	utils.PrintSection("OPTIMISATION — ProLang")
 	utils.PrintPhase("Code Optimization")
 
@@ -96,7 +89,6 @@ func main() {
 	quad.Print("── QUADS OPTIMISÉS ──", optimizedQuads)
 	utils.PrintStats("Optimization: %d before → %d after", len(qm.Quads), len(optimizedQuads))
 
-	// ── Compilation Réussie ──────────────────────────────────
 	utils.PrintSection("COMPILATION RÉUSSIE — ProLang")
 	utils.PrintSuccess("Compilation successful for: %s", filePath)
 }

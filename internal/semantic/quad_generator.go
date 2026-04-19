@@ -5,17 +5,12 @@ import (
 	"go_compiler/internal/quad"
 )
 
-// ════════════════════════════════════════════════════════════════
-//  QUAD GENERATOR (IR GENERATION)
-// ════════════════════════════════════════════════════════════════
-
 type QuadGenerator struct {
 	analyzer *Analyzer
 	qm       *quad.Manager
-	tempVars map[string]string // Map of parsed variables to track
+	tempVars map[string]string
 }
 
-// NewQuadGenerator creates a new quad generator
 func NewQuadGenerator(analyzer *Analyzer) *QuadGenerator {
 	return &QuadGenerator{
 		analyzer: analyzer,
@@ -24,29 +19,23 @@ func NewQuadGenerator(analyzer *Analyzer) *QuadGenerator {
 	}
 }
 
-// Generate generates quads from the analyzed program
 func (qg *QuadGenerator) Generate() *quad.Manager {
-	// We need to re-parse and track instructions
-	// Since semantic analyzer only validates, we need to walk through tokens again
 	qg.generateFromTokens()
 	return qg.qm
 }
 
-// generateFromTokens walks through tokens and generates quads
 func (qg *QuadGenerator) generateFromTokens() {
 	tokens := qg.analyzer.tokens
 	pos := 0
 
-	// Find RUN block
 	for pos < len(tokens) {
 		if tokens[pos].Kind == lexer.RUN {
-			pos++ // skip RUN
+			pos++
 			if pos < len(tokens) && tokens[pos].Kind == lexer.COLON {
-				pos++ // skip :
+				pos++
 			}
 			if pos < len(tokens) && tokens[pos].Kind == lexer.LBRACE {
-				pos++ // skip {
-				// Generate quads for statements in Run block
+				pos++
 				pos = qg.generateStatements(tokens, pos)
 			}
 			break
@@ -55,9 +44,7 @@ func (qg *QuadGenerator) generateFromTokens() {
 	}
 }
 
-// generateStatements processes statements and generates quads
 func (qg *QuadGenerator) generateStatements(tokens []lexer.Token, pos int) int {
-	// Process statements until we hit }
 	for pos < len(tokens) {
 		tok := tokens[pos]
 
@@ -66,20 +53,16 @@ func (qg *QuadGenerator) generateStatements(tokens []lexer.Token, pos int) int {
 			return pos + 1
 
 		case lexer.IDENT:
-			// Check if assignment
 			if pos+1 < len(tokens) {
 				nextTok := tokens[pos+1]
 				if nextTok.Kind == lexer.ASSIGN {
 					varName := tok.Value
-					pos += 2 // skip var and <-
+					pos += 2
 
-					// Generate quads for the right-hand side expression
 					result := qg.generateExpression(tokens, &pos)
 
-					// Emit assignment
 					qg.qm.Emit(":=", result, "", varName)
 
-					// Skip semicolon
 					if pos < len(tokens) && tokens[pos].Kind == lexer.SEMI {
 						pos++
 					}
@@ -100,16 +83,13 @@ func (qg *QuadGenerator) generateStatements(tokens []lexer.Token, pos int) int {
 	return pos
 }
 
-// generateExpression handles expressions and returns the result variable
 func (qg *QuadGenerator) generateExpression(tokens []lexer.Token, pos *int) string {
 	if *pos >= len(tokens) {
 		return ""
 	}
 
-	// Parse left operand
 	left := qg.getPrimaryValue(tokens, pos)
 
-	// Check for binary operations
 	for *pos < len(tokens) {
 		if *pos >= len(tokens) {
 			break
@@ -122,11 +102,10 @@ func (qg *QuadGenerator) generateExpression(tokens []lexer.Token, pos *int) stri
 			lexer.LT, lexer.GT, lexer.LTE, lexer.GTE, lexer.EQ, lexer.NEQ:
 
 			op := tok.Value
-			*pos++ // skip operator
+			*pos++
 
 			right := qg.getPrimaryValue(tokens, pos)
 
-			// Emit binary operation
 			result := qg.qm.NewTemp()
 			qg.qm.Emit(op, left, right, result)
 			left = result
@@ -139,7 +118,6 @@ func (qg *QuadGenerator) generateExpression(tokens []lexer.Token, pos *int) stri
 	return left
 }
 
-// getPrimaryValue gets a primary value (constant, variable, or parenthesized expression)
 func (qg *QuadGenerator) getPrimaryValue(tokens []lexer.Token, pos *int) string {
 	if *pos >= len(tokens) {
 		return ""
@@ -156,9 +134,7 @@ func (qg *QuadGenerator) getPrimaryValue(tokens []lexer.Token, pos *int) string 
 	case lexer.STRING:
 		return tok.Value
 	case lexer.LPAREN:
-		// Handle parenthesized expression
 		result := qg.generateExpression(tokens, pos)
-		// Skip closing )
 		if *pos < len(tokens) && tokens[*pos].Kind == lexer.RPAREN {
 			(*pos)++
 		}
@@ -168,14 +144,12 @@ func (qg *QuadGenerator) getPrimaryValue(tokens []lexer.Token, pos *int) string 
 	return ""
 }
 
-// generateOutCall handles output function calls
 func (qg *QuadGenerator) generateOutCall(tokens []lexer.Token, pos int) int {
-	pos++ // skip 'out'
+	pos++
 
 	if pos < len(tokens) && tokens[pos].Kind == lexer.LPAREN {
-		pos++ // skip (
+		pos++
 
-		// Collect arguments
 		for pos < len(tokens) {
 			if tokens[pos].Kind == lexer.RPAREN {
 				pos++
@@ -191,7 +165,6 @@ func (qg *QuadGenerator) generateOutCall(tokens []lexer.Token, pos int) int {
 		}
 	}
 
-	// Skip semicolon
 	if pos < len(tokens) && tokens[pos].Kind == lexer.SEMI {
 		pos++
 	}
@@ -199,14 +172,12 @@ func (qg *QuadGenerator) generateOutCall(tokens []lexer.Token, pos int) int {
 	return pos
 }
 
-// generateInCall handles input function calls
 func (qg *QuadGenerator) generateInCall(tokens []lexer.Token, pos int) int {
-	pos++ // skip 'in'
+	pos++
 
 	if pos < len(tokens) && tokens[pos].Kind == lexer.LPAREN {
-		pos++ // skip (
+		pos++
 
-		// Collect arguments
 		for pos < len(tokens) {
 			if tokens[pos].Kind == lexer.RPAREN {
 				pos++
@@ -222,7 +193,6 @@ func (qg *QuadGenerator) generateInCall(tokens []lexer.Token, pos int) int {
 		}
 	}
 
-	// Skip semicolon
 	if pos < len(tokens) && tokens[pos].Kind == lexer.SEMI {
 		pos++
 	}

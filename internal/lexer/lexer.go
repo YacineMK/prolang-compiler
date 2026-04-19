@@ -25,16 +25,12 @@ func New(src string) *Lexer {
 	}
 }
 
-// ───────────────────────── core ─────────────────────────
-
 func (l *Lexer) Lex() {
 	for l.pos < len(l.source) {
 		l.scan()
 	}
 	l.addToken(EOF, "")
 }
-
-// ───────────────────────── helpers ─────────────────────────
 
 func (l *Lexer) peek() rune {
 	if l.pos >= len(l.source) {
@@ -79,18 +75,14 @@ func (l *Lexer) addError(msg string) {
 		fmt.Sprintf("LEXICAL_ERROR line %d col %d %s", l.line, l.col, msg))
 }
 
-// ───────────────────────── scanning ─────────────────────────
-
 func (l *Lexer) scan() {
 	ch := l.peek()
 
-	// whitespace
 	if unicode.IsSpace(ch) {
 		l.advance()
 		return
 	}
 
-	// %% comment
 	if ch == '%' && l.peekAt(1) == '%' {
 		l.advance()
 		l.advance()
@@ -100,16 +92,15 @@ func (l *Lexer) scan() {
 		return
 	}
 
-	// //* ... *// multi-line comment (// followed by * ... * followed by //)
 	if ch == '/' && l.peekAt(1) == '/' && l.peekAt(2) == '*' {
-		l.advance() // skip /
-		l.advance() // skip /
-		l.advance() // skip *
+		l.advance()
+		l.advance()
+		l.advance()
 		for l.peek() != 0 {
 			if l.peek() == '*' && l.peekAt(1) == '/' && l.peekAt(2) == '/' {
-				l.advance() // skip *
-				l.advance() // skip /
-				l.advance() // skip /
+				l.advance()
+				l.advance()
+				l.advance()
 				break
 			}
 			l.advance()
@@ -117,25 +108,21 @@ func (l *Lexer) scan() {
 		return
 	}
 
-	// string
 	if ch == '"' {
 		l.scanString()
 		return
 	}
 
-	// number
 	if unicode.IsDigit(ch) {
 		l.scanNumber()
 		return
 	}
 
-	// identifier / keyword
 	if unicode.IsLetter(ch) {
 		l.scanIdent()
 		return
 	}
 
-	// operators 2-char
 	switch ch {
 	case '<':
 		l.advance()
@@ -181,7 +168,6 @@ func (l *Lexer) scan() {
 		return
 	}
 
-	// single char tokens
 	single := map[rune]TokenKind{
 		'+': PLUS,
 		'-': MINUS,
@@ -209,8 +195,6 @@ func (l *Lexer) scan() {
 	l.advance()
 }
 
-// ───────────────────────── sub scanners ─────────────────────────
-
 func (l *Lexer) scanNumber() {
 	start := l.line
 	var sb strings.Builder
@@ -237,7 +221,7 @@ func (l *Lexer) scanNumber() {
 }
 
 func (l *Lexer) scanString() {
-	l.advance() // "
+	l.advance()
 
 	var sb strings.Builder
 
@@ -268,9 +252,7 @@ func (l *Lexer) scanIdent() {
 
 	word := sb.String()
 
-	// context keywords
 	if word == "in" {
-		// Look ahead to see if next non-space char is '('
 		p := l.pos
 		for p < len(l.source) && unicode.IsSpace(l.source[p]) {
 			p++
