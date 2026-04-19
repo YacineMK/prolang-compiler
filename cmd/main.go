@@ -1,79 +1,61 @@
 package main
 
 import (
-	"fmt"
 	"go_compiler/internal/ast"
 	"go_compiler/internal/lexer"
+	"go_compiler/internal/optimizer"
+	"go_compiler/internal/quad"
 	"go_compiler/internal/semantic"
+	"go_compiler/internal/utils"
+	"io/ioutil"
+	"os"
 )
 
 func main() {
-	src := `
-BeginProject testprog;
+	// Get file path from command-line arguments
+	if len(os.Args) < 2 {
+		utils.PrintError("Usage: go_compiler <file_path>")
+		utils.PrintError("Example: go_compiler example/test.pl")
+		os.Exit(1)
+	}
 
-Setup :
-  define x | y : integer;
-  define moyenne : float = 0.0;
-  define i : integer;
-  define Tab : [integer ;20] ;
-  const Pi : float = 3.14159;
+	filePath := os.Args[1]
+	utils.PrintInfo("Input file: %s", filePath)
 
-Run :
-{
-  x <- 5;
-  y <- x + 10;
-  Tab[0] <- y * 2;
-  moyenne <- (x + y) / 2;
+	// Read the file
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		utils.PrintError("Error reading file %s: %v", filePath, err)
+		os.Exit(1)
+	}
 
-  if (x > y) then:
-  {
-    x <- x - 1;
-  } else {
-    y <- y + 1;
-  } endIf;
-
-  loop while (x < 10)
-  {
-    x <- x + 1;
-  } endloop;
-
-  for i in 1 to 10 {
-    y <- y * i;
-  } endfor;
-
-  in(x);
-  out("Resultat: ", moyenne);
-}
-
-EndProject ;
-`
+	src := string(data)
 
 	// ── Analyse Lexicale ─────────────────────────────────────
-	fmt.Println("══════════════════════════════════════════════")
-	fmt.Println("          ANALYSE LEXICALE — ProLang          ")
-	fmt.Println("══════════════════════════════════════════════")
+	utils.PrintSection("ANALYSE LEXICALE — ProLang")
+	utils.PrintPhase("Lexical Analysis")
 
 	lx := lexer.New(src)
 	lx.Lex()
 
+	utils.PrintInfo("Total tokens found: %d", len(lx.Tokens))
+	utils.PrintDebug("Tokens details:")
 	for _, tok := range lx.Tokens {
-		fmt.Printf("Token{%-15s %-22q ligne:%-3d col:%d}\n", tok.Kind, tok.Value, tok.Line, tok.Col)
+		utils.PrintDebug("  Token{%-15s %-22q ligne:%-3d col:%d}", tok.Kind, tok.Value, tok.Line, tok.Col)
 	}
 
-	fmt.Println()
 	if len(lx.Errors) > 0 {
-		fmt.Println("── Erreurs Lexicales ──────────────────────────")
+		utils.PrintWarning("Found %d lexical errors", len(lx.Errors))
 		for _, e := range lx.Errors {
-			fmt.Println(" ✗", e)
+			utils.PrintError("%s", e)
 		}
 	} else {
-		fmt.Println(" ✓ Aucune erreur lexicale détectée.")
+		utils.PrintSuccess("Lexical Analysis successful")
 	}
 
 	// ── Analyse Sémantique ───────────────────────────────────
-	fmt.Println("\n══════════════════════════════════════════════")
-	fmt.Println("         ANALYSE SÉMANTIQUE — ProLang         ")
-	fmt.Println("══════════════════════════════════════════════")
+	utils.PrintSection("ANALYSE SÉMANTIQUE — ProLang")
+	utils.PrintPhase("Semantic Analysis")
 
 	table := ast.NewSymbolTable()
 	analyzer := semantic.NewAnalyzer(lx.Tokens, table)
@@ -82,11 +64,39 @@ EndProject ;
 	table.Print()
 
 	if len(analyzer.Errors) > 0 {
-		fmt.Println("── Erreurs Sémantiques ────────────────────────")
+		utils.PrintWarning("Found %d semantic errors", len(analyzer.Errors))
 		for _, e := range analyzer.Errors {
-			fmt.Println(" ✗", e)
+			utils.PrintError("%s", e)
 		}
+		utils.PrintError("Compilation failed due to semantic errors")
+		os.Exit(1)
 	} else {
-		fmt.Println(" ✓ Aucune erreur sémantique détectée.")
+		utils.PrintSuccess("Semantic Analysis successful")
 	}
+
+	// ── Génération de Quads ──────────────────────────────────
+	utils.PrintSection("GÉNÉRATION DES QUADS — ProLang")
+	utils.PrintPhase("Quad Generation")
+
+	// Create quad generator from semantic analyzer
+	qg := semantic.NewQuadGenerator(analyzer)
+	qm := qg.Generate()
+
+	utils.PrintInfo("Quad generation from Run block statements")
+
+	quad.Print("── QUADS GÉNÉRÉS ──", qm.Quads)
+	utils.PrintStats("Total quads generated: %d", len(qm.Quads))
+
+	// ── Optimisation ─────────────────────────────────────────
+	utils.PrintSection("OPTIMISATION — ProLang")
+	utils.PrintPhase("Code Optimization")
+
+	optimizedQuads := optimizer.Optimize(qm.Quads)
+
+	quad.Print("── QUADS OPTIMISÉS ──", optimizedQuads)
+	utils.PrintStats("Optimization: %d before → %d after", len(qm.Quads), len(optimizedQuads))
+
+	// ── Compilation Réussie ──────────────────────────────────
+	utils.PrintSection("COMPILATION RÉUSSIE — ProLang")
+	utils.PrintSuccess("Compilation successful for: %s", filePath)
 }
