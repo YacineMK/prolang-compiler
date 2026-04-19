@@ -9,6 +9,7 @@ Run :
 {
   x <- 5;
   y <- x + 10;
+  //* This is a comment *//
   out("Result: ", y);
 }
 

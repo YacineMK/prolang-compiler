@@ -100,6 +100,23 @@ func (l *Lexer) scan() {
 		return
 	}
 
+	// //* ... *// multi-line comment (// followed by * ... * followed by //)
+	if ch == '/' && l.peekAt(1) == '/' && l.peekAt(2) == '*' {
+		l.advance() // skip /
+		l.advance() // skip /
+		l.advance() // skip *
+		for l.peek() != 0 {
+			if l.peek() == '*' && l.peekAt(1) == '/' && l.peekAt(2) == '/' {
+				l.advance() // skip *
+				l.advance() // skip /
+				l.advance() // skip /
+				break
+			}
+			l.advance()
+		}
+		return
+	}
+
 	// string
 	if ch == '"' {
 		l.scanString()

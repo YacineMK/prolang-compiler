@@ -333,6 +333,12 @@ func (a *Analyzer) parseInFunc() {
 	if ok && a.Table.Lookup(nameTok.Value) == nil {
 		a.errorf(nameTok, "identificateur '%s' non déclaré", nameTok.Value)
 	}
+	// Handle array indexing: in(array[index])
+	if a.cur().Kind == lexer.LBRACK {
+		a.consume()
+		a.parseExpr()
+		a.expect(lexer.RBRACK)
+	}
 	a.expect(lexer.RPAREN)
 	a.expect(lexer.SEMI)
 }
@@ -348,6 +354,12 @@ func (a *Analyzer) parseOutFunc() {
 			nameTok := a.consume()
 			if a.Table.Lookup(nameTok.Value) == nil {
 				a.errorf(nameTok, "identificateur '%s' non déclaré", nameTok.Value)
+			}
+			// Handle array indexing: out(..., array[index], ...)
+			if a.cur().Kind == lexer.LBRACK {
+				a.consume()
+				a.parseExpr()
+				a.expect(lexer.RBRACK)
 			}
 		} else {
 			break
@@ -416,6 +428,14 @@ func (a *Analyzer) parsePrimary() ast.DataType {
 			a.consume()
 		}
 		inner := a.parseExpr()
+		// Check for comparison operators inside parentheses
+		if a.cur().Kind == lexer.LT || a.cur().Kind == lexer.GT ||
+			a.cur().Kind == lexer.LTE || a.cur().Kind == lexer.GTE ||
+			a.cur().Kind == lexer.EQ || a.cur().Kind == lexer.NEQ {
+			a.consume()
+			t2 := a.parseExpr()
+			inner = ast.MergeTypes(inner, t2)
+		}
 		a.expect(lexer.RPAREN)
 		return inner
 	default:
@@ -426,21 +446,49 @@ func (a *Analyzer) parsePrimary() ast.DataType {
 }
 
 func (a *Analyzer) parseCondition() {
+	a.parseOrCondition()
+}
+
+func (a *Analyzer) parseOrCondition() {
+	a.parseAndCondition()
+	for a.cur().Kind == lexer.OR {
+		a.consume()
+		a.parseAndCondition()
+	}
+}
+
+func (a *Analyzer) parseAndCondition() {
+	a.parseNotCondition()
+	for a.cur().Kind == lexer.AND {
+		a.consume()
+		a.parseNotCondition()
+	}
+}
+
+func (a *Analyzer) parseNotCondition() {
 	if a.cur().Kind == lexer.NON {
 		a.consume()
-		a.expect(lexer.LPAREN)
+		a.parseNotCondition()
+		return
+	}
+	a.parsePrimaryCondition()
+}
+
+func (a *Analyzer) parsePrimaryCondition() {
+	// Handle parenthesized conditions: (condition)
+	if a.cur().Kind == lexer.LPAREN {
+		a.consume()
 		a.parseCondition()
 		a.expect(lexer.RPAREN)
 		return
 	}
+
+	// Handle comparison: expr <op> expr
 	a.parseExpr()
 	switch a.cur().Kind {
 	case lexer.LT, lexer.GT, lexer.LTE, lexer.GTE, lexer.EQ, lexer.NEQ:
 		a.consume()
 		a.parseExpr()
-	case lexer.AND, lexer.OR:
-		a.consume()
-		a.parseCondition()
 	}
 }
 
