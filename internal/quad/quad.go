@@ -10,7 +10,7 @@ type Quad struct {
 }
 
 func (q Quad) String() string {
-	return fmt.Sprintf("( %-6s , %-10s , %-10s , %-10s )",
+	return fmt.Sprintf("( %s , %s , %s , %s )",
 		q.Op, q.Arg1, q.Arg2, q.Result)
 }
 

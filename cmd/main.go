@@ -3,7 +3,6 @@ package main
 import (
 	"go_compiler/internal/ast"
 	"go_compiler/internal/lexer"
-	"go_compiler/internal/optimizer"
 	"go_compiler/internal/quad"
 	"go_compiler/internal/semantic"
 	"go_compiler/internal/utils"
@@ -84,10 +83,10 @@ func main() {
 	utils.PrintSection("OPTIMISATION — ProLang")
 	utils.PrintPhase("Code Optimization")
 
-	optimizedQuads := optimizer.Optimize(qm.Quads)
+	// optimizedQuads := optimizer.Optimize(qm.Quads)
 
-	quad.Print("── QUADS OPTIMISÉS ──", optimizedQuads)
-	utils.PrintStats("Optimization: %d before → %d after", len(qm.Quads), len(optimizedQuads))
+	// quad.Print("── QUADS OPTIMISÉS ──", optimizedQuads)
+	// utils.PrintStats("Optimization: %d before → %d after", len(qm.Quads), len(optimizedQuads))
 
 	utils.PrintSection("COMPILATION RÉUSSIE — ProLang")
 	utils.PrintSuccess("Compilation successful for: %s", filePath)
