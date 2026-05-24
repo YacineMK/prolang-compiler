@@ -17,6 +17,10 @@ func isTemp(s string) bool {
 	return len(s) > 0 && s[0] == 'T'
 }
 
+func isUserVar(s string) bool {
+	return s != "" && !isLiteral(s) && !isTemp(s)
+}
+
 func eval(op, a, b string) (string, bool) {
 	fa, e1 := strconv.ParseFloat(a, 64)
 	fb, e2 := strconv.ParseFloat(b, 64)
@@ -78,6 +82,16 @@ func fmtFloat(f float64) string {
 }
 
 func propagate(quads []quad.Quad) []quad.Quad {
+	// Count assignments per variable. Variables assigned more than once
+	// cannot be safely propagated because their value changes over time
+	// (e.g. inside loops or across if/else branches).
+	assignCount := map[string]int{}
+	for _, q := range quads {
+		if q.Op == ":=" {
+			assignCount[q.Result]++
+		}
+	}
+
 	env := map[string]string{}
 
 	resolve := func(x string) string {
@@ -96,9 +110,11 @@ func propagate(quads []quad.Quad) []quad.Quad {
 		a1 := resolve(q.Arg1)
 		a2 := resolve(q.Arg2)
 
-		if q.Op == ":=" && isLiteral(a1) {
+		singleAssign := assignCount[q.Result] <= 1
+
+		if q.Op == ":=" && isLiteral(a1) && singleAssign {
 			env[q.Result] = a1
-		} else if q.Op == ":=" && isTemp(a1) {
+		} else if q.Op == ":=" && isTemp(a1) && singleAssign {
 			env[q.Result] = a1
 		} else if q.Result != "" {
 			delete(env, q.Result)
@@ -199,6 +215,14 @@ func cse(quads []quad.Quad) []quad.Quad {
 	for _, q := range quads {
 
 		if q.Op == "+" || q.Op == "*" || q.Op == "-" || q.Op == "/" {
+			// Only cache expressions whose operands are all literals or temps.
+			// User variables can be reassigned between occurrences, so reusing
+			// a cached result would be incorrect.
+			if isUserVar(q.Arg1) || isUserVar(q.Arg2) {
+				out = append(out, q)
+				continue
+			}
+
 			k := key(q.Op, q.Arg1, q.Arg2)
 
 			if existing, ok := exprMap[k]; ok {

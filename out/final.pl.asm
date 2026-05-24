@@ -117,10 +117,13 @@ L6:
     MOV b, AX
 
 L7:
-    MOV T2, 10
+    MOV AX, y
+    MOV CX, 2
+    IMUL CX
+    MOV T2, AX
 
 L8:
-    MOV AX, 10
+    MOV AX, x
     MOV CX, T2
     ADD AX, CX
     MOV T3, AX
@@ -150,10 +153,19 @@ L12:
     MOV Tabfloat[SI], AX
 
 L13:
-    MOV T6, 1
+    MOV AX, x
+    CMP AX, y
+    MOV AX, 0
+    JLE S13_end
+    MOV AX, 1
+S13_end:
+    MOV T6, AX
 
 L14:
-    MOV T7, 15
+    MOV AX, x
+    MOV CX, y
+    ADD AX, CX
+    MOV T7, AX
 
 L15:
     MOV AX, 2
@@ -170,7 +182,13 @@ L16:
     MOV T9, AX
 
 L17:
-    MOV T10, 0
+    MOV AX, y
+    CMP AX, 0
+    MOV AX, 0
+    JNE S17_end
+    MOV AX, 1
+S17_end:
+    MOV T10, AX
 
 L18:
     MOV AX, T10
@@ -188,7 +206,10 @@ L20:
     JZ L46
 
 L21:
-    MOV T13, 15
+    MOV AX, x
+    MOV CX, y
+    ADD AX, CX
+    MOV T13, AX
 
 L22:
     MOV AX, T13
@@ -203,7 +224,13 @@ L24:
     MOV i, 0
 
 L25:
-    MOV T15, 1
+    MOV AX, i
+    CMP AX, 10
+    MOV AX, 0
+    JG S25_end
+    MOV AX, 1
+S25_end:
+    MOV T15, AX
 
 L26:
     MOV AX, T15
@@ -211,26 +238,34 @@ L26:
     JZ L45
 
 L27:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, Tabint[SI]
     MOV T16, AX
 
 L28:
     MOV AX, T16
+    MOV CX, i
+    ADD AX, CX
     MOV T17, AX
 
 L29:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, T17
     MOV Tabint[SI], AX
 
 L30:
-    MOV T18, 1
+    MOV AX, i
+    CMP AX, 5
+    MOV AX, 0
+    JGE S30_end
+    MOV AX, 1
+S30_end:
+    MOV T18, AX
 
 L31:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, Tabint[SI]
     MOV T19, AX
@@ -255,7 +290,7 @@ L34:
     JZ L39
 
 L35:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, Tabint[SI]
     MOV T22, AX
@@ -267,7 +302,7 @@ L36:
     MOV T23, AX
 
 L37:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, T23
     MOV Tabfloat[SI], AX
@@ -276,7 +311,7 @@ L38:
     JMP L42
 
 L39:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, Tabint[SI]
     MOV T24, AX
@@ -289,13 +324,15 @@ L40:
     MOV T25, AX
 
 L41:
-    MOV SI, 0
+    MOV SI, i
     ADD SI, SI
     MOV AX, T25
     MOV Tabfloat[SI], AX
 
 L42:
-    MOV T26, 1
+    MOV AX, i
+    ADD AX, 1
+    MOV T26, AX
 
 L43:
     MOV AX, T26
@@ -311,7 +348,7 @@ L46:
     MOV somme, 0
 
 L47:
-    MOV AX, 10
+    MOV AX, x
     CMP AX, Max
     MOV AX, 0
     JG S47_end
@@ -320,7 +357,13 @@ S47_end:
     MOV T27, AX
 
 L48:
-    MOV T28, 1
+    MOV AX, y
+    CMP AX, 0
+    MOV AX, 0
+    JE S48_end
+    MOV AX, 1
+S48_end:
+    MOV T28, AX
 
 L49:
     MOV T29, 1
@@ -341,15 +384,17 @@ L52:
     JZ L69
 
 L53:
-    MOV T32, 11
+    MOV AX, x
+    ADD AX, 1
+    MOV T32, AX
 
 L54:
     MOV AX, T32
     MOV x, AX
 
 L55:
-    MOV AX, T32
-    CMP AX, 5
+    MOV AX, x
+    CMP AX, y
     MOV AX, 0
     JNE S55_end
     MOV AX, 1
@@ -367,14 +412,16 @@ L57:
     JZ L68
 
 L58:
-    MOV T35, 6
+    MOV AX, y
+    ADD AX, 1
+    MOV T35, AX
 
 L59:
     MOV AX, T35
     MOV y, AX
 
 L60:
-    MOV AX, T32
+    MOV AX, x
     ADD AX, 1
     MOV T36, AX
 
@@ -397,8 +444,8 @@ L63:
     MOV T39, AX
 
 L64:
-    MOV AX, T32
-    MOV CX, T35
+    MOV AX, x
+    MOV CX, y
     SUB AX, CX
     MOV T40, AX
 
@@ -424,7 +471,13 @@ L69:
     MOV j, 1
 
 L70:
-    MOV T42, 1
+    MOV AX, j
+    CMP AX, 20
+    MOV AX, 0
+    JG S70_end
+    MOV AX, 1
+S70_end:
+    MOV T42, AX
 
 L71:
     MOV AX, T42
@@ -432,7 +485,9 @@ L71:
     JZ L84
 
 L72:
-    MOV T43, 0
+    MOV AX, j
+    SUB AX, 1
+    MOV T43, AX
 
 L73:
     MOV SI, T43
@@ -441,7 +496,7 @@ L73:
     MOV T44, AX
 
 L74:
-    MOV SI, 1
+    MOV SI, j
     ADD SI, SI
     MOV AX, Tabfloat[SI]
     MOV T45, AX
@@ -460,13 +515,13 @@ L76:
     MOV T47, AX
 
 L77:
-    MOV SI, 1
+    MOV SI, j
     ADD SI, SI
     MOV AX, T47
     MOV Tabfloat[SI], AX
 
 L78:
-    MOV SI, 1
+    MOV SI, j
     ADD SI, SI
     MOV AX, Tabfloat[SI]
     MOV T48, AX
@@ -482,7 +537,9 @@ L80:
     MOV moyenne, AX
 
 L81:
-    MOV T50, 2
+    MOV AX, j
+    ADD AX, 1
+    MOV T50, AX
 
 L82:
     MOV AX, T50
@@ -492,7 +549,7 @@ L83:
     JMP L70
 
 L84:
-    MOV AX, T49
+    MOV AX, moyenne
     MOV CX, 20
     CWD
     IDIV CX
@@ -524,7 +581,7 @@ L89:
     INT 21h
 
 L90:
-    MOV AX, 0
+    MOV AX, somme
     CALL PRINT_INT
 
 L91:
@@ -533,7 +590,7 @@ L91:
     INT 21h
 
 L92:
-    MOV AX, T51
+    MOV AX, moyenne
     CALL PRINT_INT
 
     MOV AH, 4Ch
