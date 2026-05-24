@@ -98,6 +98,16 @@ func (st *SymbolTable) Update(name, value string) error {
 	return fmt.Errorf("symbole '%s' non trouvé", name)
 }
 
+func (st *SymbolTable) Symbols() []Symbol {
+	syms := make([]Symbol, 0, st.count)
+	for _, e := range st.buckets {
+		for ; e != nil; e = e.next {
+			syms = append(syms, e.sym)
+		}
+	}
+	return syms
+}
+
 func (st *SymbolTable) Print() {
 	line := strings.Repeat("─", 72)
 	fmt.Println("\n┌" + line + "┐")

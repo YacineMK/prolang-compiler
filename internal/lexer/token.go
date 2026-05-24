@@ -94,4 +94,5 @@ var Keywords = map[string]TokenKind{
 	"AND":          AND,
 	"OR":           OR,
 	"NON":          NON,
+	"input":        IN_FUNC,
 }

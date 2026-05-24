@@ -128,7 +128,12 @@ func (l *Lexer) scan() {
 		l.advance()
 		if l.peek() == '-' {
 			l.advance()
-			l.addToken(ASSIGN, "<-")
+			if l.peek() == '-' {
+				l.advance()
+				l.addToken(ASSIGN, "<--")
+			} else {
+				l.addToken(ASSIGN, "<-")
+			}
 		} else if l.peek() == '=' {
 			l.advance()
 			l.addToken(LTE, "<=")

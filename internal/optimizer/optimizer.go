@@ -227,16 +227,53 @@ func deadCode(quads []quad.Quad) []quad.Quad {
 		}
 	}
 
-	out := []quad.Quad{}
-
-	for _, q := range quads {
+	keep := make([]bool, len(quads))
+	for i, q := range quads {
 		if q.Op == ":=" && isTemp(q.Result) && uses[q.Result] == 0 {
+			keep[i] = false
+		} else {
+			keep[i] = true
+		}
+	}
+
+	oldToNew := make(map[int]int)
+	newIdx := 0
+	for i := range quads {
+		if keep[i] {
+			oldToNew[i] = newIdx
+			newIdx++
+		}
+	}
+
+	out := make([]quad.Quad, 0, newIdx)
+	for i, q := range quads {
+		if !keep[i] {
 			continue
+		}
+		if q.Op == "BF" || q.Op == "BR" {
+			q.Result = remapTarget(q.Result, oldToNew, len(quads))
 		}
 		out = append(out, q)
 	}
 
 	return out
+}
+
+func remapTarget(target string, oldToNew map[int]int, oldLen int) string {
+	old, err := strconv.Atoi(target)
+	if err != nil {
+		return target
+	}
+	if nt, ok := oldToNew[old]; ok {
+		return fmt.Sprintf("%d", nt)
+	}
+	// target was removed — find next kept quad
+	for j := old + 1; j < oldLen; j++ {
+		if nt, ok := oldToNew[j]; ok {
+			return fmt.Sprintf("%d", nt)
+		}
+	}
+	return target
 }
 
 func Optimize(quads []quad.Quad) []quad.Quad {

@@ -26,6 +26,10 @@ func NewManager() *Manager {
 	}
 }
 
+func (m *Manager) NextIndex() int {
+	return len(m.Quads)
+}
+
 func (m *Manager) Emit(op, arg1, arg2, result string) int {
 	m.Quads = append(m.Quads, Quad{
 		Op:     op,
